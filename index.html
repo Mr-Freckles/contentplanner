@@ -90,17 +90,23 @@ const mon=d=>addD(d,-((d.getDay()+6)%7));
 
 /* ---------- verse parsing ---------- */
 const ALIAS={psalms:'psalm','song of songs':'song of solomon','songs of solomon':'song of solomon',revelations:'revelation',proverb:'proverbs'};
+const BOOKS='genesis,exodus,leviticus,numbers,deuteronomy,joshua,judges,ruth,1 samuel,2 samuel,1 kings,2 kings,1 chronicles,2 chronicles,ezra,nehemiah,esther,job,psalm,proverbs,ecclesiastes,song of solomon,isaiah,jeremiah,lamentations,ezekiel,daniel,hosea,joel,amos,obadiah,jonah,micah,nahum,habakkuk,zephaniah,haggai,zechariah,malachi,matthew,mark,luke,john,acts,romans,1 corinthians,2 corinthians,galatians,ephesians,philippians,colossians,1 thessalonians,2 thessalonians,1 timothy,2 timothy,titus,philemon,hebrews,james,1 peter,2 peter,1 john,2 john,3 john,jude,revelation'.split(',');
+const ABB={gen:'genesis',ex:'exodus',exod:'exodus',lev:'leviticus',num:'numbers',deut:'deuteronomy',josh:'joshua',judg:'judges','1 sam':'1 samuel','2 sam':'2 samuel','1 kgs':'1 kings','2 kgs':'2 kings','1 chr':'1 chronicles','2 chr':'2 chronicles',neh:'nehemiah',esth:'esther',ps:'psalm',psa:'psalm',prov:'proverbs',eccl:'ecclesiastes',eccles:'ecclesiastes',song:'song of solomon',sos:'song of solomon',isa:'isaiah',jer:'jeremiah',lam:'lamentations',ezek:'ezekiel',dan:'daniel',hos:'hosea',obad:'obadiah',mic:'micah',nah:'nahum',hab:'habakkuk',zeph:'zephaniah',hag:'haggai',zech:'zechariah',mal:'malachi',matt:'matthew',mt:'matthew',mk:'mark',lk:'luke',jn:'john',rom:'romans','1 cor':'1 corinthians','2 cor':'2 corinthians',gal:'galatians',eph:'ephesians',phil:'philippians',col:'colossians','1 thess':'1 thessalonians','2 thess':'2 thessalonians','1 tim':'1 timothy','2 tim':'2 timothy',tit:'titus',philem:'philemon',heb:'hebrews',jas:'james','1 pet':'1 peter','2 pet':'2 peter',rev:'revelation'};
+const matchBook=b=>BOOKS.includes(b)?b:ABB[b]||null;
+const cap=s=>s.replace(/\b[a-z]/g,c=>c.toUpperCase());
+const lev=(a,b)=>{const d=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return d[b.length]};
+const suggest=b=>{let best=null,bd=99;BOOKS.forEach(k=>{const x=lev(b,k);if(x<bd){bd=x;best=k}});return bd<=Math.max(2,Math.round(b.length*.4))?best:null};
 function parseRef(t){
   const m=t.trim().match(/^(\d?\s*[a-z][a-z .]*?)\s*(\d+)\s*[:.]\s*(\d+)(?:\s*[-–]\s*(\d+))?$/i);
   if(!m)return null;
   let b=m[1].toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim().replace(/^(\d)\s*/,'$1 ');
-  b=ALIAS[b]||b;
+  b=ALIAS[b]||b;const cb=matchBook(b);if(!cb)return{badBook:b,keys:[]};b=cb;
   const a=+m[3],z=m[4]?+m[4]:a;if(z<a||z-a>60)return null;
   const keys=[];for(let v=a;v<=z;v++)keys.push(b+' '+m[2]+':'+v);
   return{book:b,keys};
 }
 function checkVerse(ref,date){
-  const p=parseRef(ref);if(!p)return{err:true};
+  const p=parseRef(ref);if(!p)return{err:true};if(p.badBook)return{badBook:p.badBook,sug:suggest(p.badBook)};
   const hits=[];
   S.verses.forEach(e=>{const q=parseRef(e.ref);if(!q)return;
     const g=Math.abs(diff(e.date,date));
@@ -125,6 +131,7 @@ function rVerses(){
    ${log.map(v=>`<tr><td>${v.date}${v.date>today?' <span class="mu">(planned)</span>':''}</td><td>${esc(v.ref)}</td><td><button class="x" data-vdel="${v.id}">✕</button></td></tr>`).join('')||'<tr><td colspan=3 class="mu">Nothing logged yet.</td></tr>'}</table></div>`;
   const run=()=>{const r=$('#vr').value.trim(),o=$('#vres');if(!r){o.className='mu';o.textContent='Type a reference to check.';return null}
     const c=checkVerse(r,$('#vd').value);
+    if(c.badBook){o.className='bad';o.innerHTML=`✗ “${esc(c.badBook)}” isn’t a book of the Bible.`+(c.sug?` Did you mean <button id='vfix'>${esc(cap(c.sug))}</button>?`:'');const f=$('#vfix');if(f)f.onclick=()=>{$('#vr').value=$('#vr').value.replace(/^\s*\d?\s*[a-z][a-z .]*?(?=\s*\d+\s*[:.])/i,cap(c.sug));run()};return null}
     if(c.err){o.className='warn';o.textContent='Couldn\'t read that. Use the format Book Chapter:Verse (or a range like 3:16-18).';return null}
     if(!c.hits.length){o.className='ok';o.textContent='✓ Clear: not used within 365 days of that date.';return c}
     o.className='bad';o.innerHTML='✗ Overlaps: '+c.hits.map(h=>`${esc(h.e.ref)} on ${h.e.date} (${h.g} days apart)`).join('; ')+`. Earliest safe date: <b>${c.free}</b>`;return c};
