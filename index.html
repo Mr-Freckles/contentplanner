@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Content Planner</title>
+<style>
+:root{--bg:#f7f6f3;--card:#fff;--tx:#1f1f1d;--mu:#6b6a65;--bd:#e2e0d9;--ac:#2f6fed;--ok:#1f9d55;--bad:#d64545;--warn:#c98a00;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#222220;--tx:#ececE8;--mu:#a09f98;--bd:#38372f;--ac:#6c9bff;--ok:#4cc380;--bad:#ff7070;--warn:#e8b339;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171716;--card:#222220;--tx:#ececE8;--mu:#a09f98;--bd:#38372f;--ac:#6c9bff;--ok:#4cc380;--bad:#ff7070;--warn:#e8b339;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:0 0 10px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+button,input,select,textarea{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 10px}
+button{cursor:pointer}button.on,button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.x{color:var(--bad)}
+textarea{width:100%;resize:vertical}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.mu{color:var(--mu);font-size:13px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+.grid{display:grid;gap:6px;min-width:640px}
+.g7{grid-template-columns:repeat(7,1fr)}
+.day{background:var(--card);border:1px solid var(--bd);border-radius:8px;min-height:90px;padding:6px}
+.day.empty{border-style:dashed}.day.today{outline:2px solid var(--ac)}
+.day .d{font-size:12px;color:var(--mu);display:flex;justify-content:space-between}
+.day .d b{cursor:pointer;color:var(--ac)}
+.chip{font-size:13px;background:var(--bg);border-left:4px solid var(--ac);border-radius:5px;padding:3px 6px;margin-top:4px;cursor:pointer}
+.chip small{display:block;color:var(--mu)}
+.yr{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.mini{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dot{aspect-ratio:1;border-radius:3px;background:var(--bd);opacity:.45;cursor:pointer}
+.dot.f{opacity:1}.dot.n{background:none;cursor:default}.dot.t{outline:2px solid var(--ac)}
+.bar{height:8px;background:var(--bd);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.split{display:grid;grid-template-columns:230px 1fr;gap:12px}
+@media(max-width:700px){.split{grid-template-columns:1fr}}
+.li{padding:7px 9px;border-radius:8px;cursor:pointer;border:1px solid transparent}.li.on{background:var(--card);border-color:var(--ac)}
+.bprev{border:1px solid var(--bd);border-radius:10px;overflow:hidden;cursor:pointer;background:#fff}.bprev canvas{display:block;width:100%;height:240px;object-fit:cover;object-position:top left}.bprev .mu{padding:6px 10px;background:var(--card)}
+#wb{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+#wb .tb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px}
+#sw button{width:24px;height:24px;padding:0;border-radius:50%}
+#bs{flex:1;position:relative;overflow:hidden;background:#fff;touch-action:none}
+#bd{position:absolute;inset:0;overflow:hidden;background-color:#fff;background-image:radial-gradient(#c4c2bb 1.3px,transparent 1.6px);background-size:40px 40px}#bd canvas{display:block;position:absolute;left:0;top:0;width:100%;height:100%;z-index:5;pointer-events:none}
+#bd.draw canvas{pointer-events:auto;touch-action:none;cursor:crosshair}
+#bd:not(.draw){cursor:grab}
+#bi{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;pointer-events:none}.it{position:absolute;pointer-events:auto;border:1px solid #aaa;background:#fffef6;color:#111;overflow:hidden;min-width:90px;min-height:50px;box-shadow:0 1px 4px #0003}
+#bd.draw .it{pointer-events:none}
+.rz{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,#777 50%);z-index:2}
+#sw button.sel{outline:3px solid var(--ac);outline-offset:2px}
+.ih{height:20px;background:#e8e6df;display:flex;justify-content:space-between;padding:0 6px;cursor:move;touch-action:none;font-size:12px;user-select:none}.ih b{cursor:pointer;color:#d64545}
+.it img{display:block;width:100%;height:calc(100% - 20px);object-fit:contain;background:#fff}
+.tx{height:calc(100% - 20px);overflow:auto;padding:6px;white-space:pre-wrap;outline:none}
+dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);max-width:420px;width:92%}
+dialog label{display:block;margin:8px 0 3px;font-size:13px;color:var(--mu)}dialog input,dialog select,dialog textarea{width:100%}
+</style></head><body><div class="wrap">
+<h1>Content Planner</h1>
+<div class="tabs" id="tabs"></div>
+<div id="main"></div>
+<dialog id="dlg"></dialog>
+<div id='wb'><div class='tb'><b id='wt'></b>
+<button data-tool='select'>Move</button><button data-tool='pen'>Pen</button><button data-tool='eraser'>Eraser</button><button data-tool='text'>Text box</button>
+<span id='sw'></span><select id='pw'><option value='2'>Thin</option><option value='4' selected>Medium</option><option value='9'>Thick</option></select>
+<button id='bimg'>Image</button><button id='bund'>Undo</button><button id='bclr' class='x'>Clear ink</button><button id='bhome'>Reset view</button><span class='mu'>Scroll or pinch to zoom · Move + drag (or middle mouse) to pan · Ctrl/Cmd+V pastes images</span>
+<button class='pri' id='bdone' style='margin-left:auto'>Done</button><input type='file' id='bf' accept='image/*' hidden></div>
+<div id='bs'><div id='bd'><canvas id='bc' width='3000' height='2000'></canvas><div id='bi'></div></div></div></div>
+</div>
+<script>
+const $=s=>document.querySelector(s),pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pd=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const diff=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const today=iso(new Date());
+const ST=['idea','scripted','filmed','edited','scheduled'];
+const COL=['#2f6fed','#e0558a','#1f9d55','#d98a00','#8a5cf6','#0aa7b5','#d64545'];
+let S={verses:[],shorts:[],series:[],long:[]};
+try{const r=localStorage.getItem('cp1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+S.shorts.forEach(s=>{if(s.status==='posted')s.status='scheduled'});S.long.forEach(l=>{if(l.status==='published')l.status='scheduled'});
+S.long.forEach(l=>{if(l.notes&&!l.board){l.board={strokes:[],items:[{id:'n0',t:'txt',x:40,y:40,w:420,h:300,text:l.notes}]};l.notes=''}});
+const save=()=>{try{localStorage.setItem('cp1',JSON.stringify(S))}catch(e){if(!window._w){window._w=1;alert('Browser storage is full, so recent changes may not be saved. Remove some images or export a backup.')}}};
+let tab='verses',view='week',anchor=new Date(),curLong=null,yearN=new Date().getFullYear();
+const serOf=id=>S.series.find(s=>s.id===id);
+const colOf=sh=>serOf(sh.series)?.color||'#888';
+const mon=d=>addD(d,-((d.getDay()+6)%7));
+
+/* ---------- verse parsing ---------- */
+const ALIAS={psalms:'psalm','song of songs':'song of solomon','songs of solomon':'song of solomon',revelations:'revelation',proverb:'proverbs'};
+function parseRef(t){
+  const m=t.trim().match(/^(\d?\s*[a-z][a-z .]*?)\s*(\d+)\s*[:.]\s*(\d+)(?:\s*[-–]\s*(\d+))?$/i);
+  if(!m)return null;
+  let b=m[1].toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim().replace(/^(\d)\s*/,'$1 ');
+  b=ALIAS[b]||b;
+  const a=+m[3],z=m[4]?+m[4]:a;if(z<a||z-a>60)return null;
+  const keys=[];for(let v=a;v<=z;v++)keys.push(b+' '+m[2]+':'+v);
+  return{book:b,keys};
+}
+function checkVerse(ref,date){
+  const p=parseRef(ref);if(!p)return{err:true};
+  const hits=[];
+  S.verses.forEach(e=>{const q=parseRef(e.ref);if(!q)return;
+    const g=Math.abs(diff(e.date,date));
+    if(g<365&&q.keys.some(k=>p.keys.includes(k)))hits.push({e,g});});
+  const free=hits.length?iso(addD(pd(hits.map(h=>h.e.date).sort().pop()),365)):null;
+  return{hits,free};
+}
+
+/* ---------- render ---------- */
+function render(){
+  $('#tabs').innerHTML=[['verses','Daily verse'],['shorts','Short-form planner'],['long','Long-form research'],['backup','Backup']]
+   .map(([k,l])=>`<button class="${tab===k?'on':''}" data-tab="${k}">${l}</button>`).join('');
+  ({verses:rVerses,shorts:rShorts,long:rLong,backup:rBackup})[tab]();
+}
+function rVerses(){
+  const log=[...S.verses].sort((a,b)=>b.date.localeCompare(a.date));
+  $('#main').innerHTML=`<div class="card"><div class="row">
+   <input type="date" id="vd" value="${today}"><input id="vr" placeholder="e.g. John 3:16 or Psalm 23:1-3" style="flex:1;min-width:200px">
+   <button class="pri" id="vadd">Log verse</button></div>
+   <div id="vres" class="mu">Type a reference to check it against the last 365 days (past and planned).</div></div>
+   <div class="card scroll"><b>Verse log</b> <span class="mu">(${log.length})</span><table><tr><th>Date</th><th>Reference</th><th></th></tr>
+   ${log.map(v=>`<tr><td>${v.date}${v.date>today?' <span class="mu">(planned)</span>':''}</td><td>${esc(v.ref)}</td><td><button class="x" data-vdel="${v.id}">✕</button></td></tr>`).join('')||'<tr><td colspan=3 class="mu">Nothing logged yet.</td></tr>'}</table></div>`;
+  const run=()=>{const r=$('#vr').value.trim(),o=$('#vres');if(!r){o.className='mu';o.textContent='Type a reference to check.';return null}
+    const c=checkVerse(r,$('#vd').value);
+    if(c.err){o.className='warn';o.textContent='Couldn\'t read that. Use the format Book Chapter:Verse (or a range like 3:16-18).';return null}
+    if(!c.hits.length){o.className='ok';o.textContent='✓ Clear: not used within 365 days of that date.';return c}
+    o.className='bad';o.innerHTML='✗ Overlaps: '+c.hits.map(h=>`${esc(h.e.ref)} on ${h.e.date} (${h.g} days apart)`).join('; ')+`. Earliest safe date: <b>${c.free}</b>`;return c};
+  $('#vr').oninput=run;$('#vd').onchange=run;
+  $('#vadd').onclick=()=>{const r=$('#vr').value.trim();if(!r)return;const c=run();if(!c)return;
+    if(c.hits.length&&!confirm('This overlaps a verse used within 365 days. Log it anyway?'))return;
+    S.verses.push({id:uid(),date:$('#vd').value,ref:r});save();rVerses()};
+}
+function chip(sh){return`<div class="chip" data-edit="${sh.id}" style="border-left-color:${colOf(sh)}">${esc(sh.title||'(untitled)')}<small>${esc(serOf(sh.series)?.name||'no series')} · ${sh.status}</small></div>`}
+function dayCell(ds,showMonth){
+  const items=S.shorts.filter(s=>s.date===ds),d=pd(ds);
+  return`<div class="day ${items.length?'':'empty'} ${ds===today?'today':''}"><div class="d"><span>${showMonth?d.toLocaleDateString(undefined,{weekday:'short',day:'numeric'}):d.getDate()}</span><b data-add="${ds}">+</b></div>${items.map(chip).join('')}</div>`;
+}
+function rShorts(){
+  const nav=`<div class="row">${['week','month','series','videos','year'].map(v=>`<button class="${view===v?'on':''}" data-view="${v}">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}
+   ${view==='week'||view==='month'||view==='year'?'<button data-nav="-1">←</button><button data-nav="0">Today</button><button data-nav="1">→</button>':''}</div>`;
+  let body='';
+  if(view==='videos'){
+    const un=S.shorts.filter(s=>!S.long.some(l=>l.id===s.long));
+    body=(S.long.length?'':'<div class="card mu">No long-form pages yet. Create one in the Long-form research tab, then link shorts to it when editing a short.</div>')+
+     [...S.long.map(l=>({id:l.id,name:l.title||'Untitled',items:S.shorts.filter(s=>s.long===l.id)})),...(un.length&&S.long.length?[{id:'',name:'Not linked to a long-form video',items:un}]:[])].map(g=>{
+      const it=g.items.sort((a,b)=>a.date.localeCompare(b.date)),done=it.filter(s=>s.status==='scheduled').length;
+      return`<div class="card"><div class="row"><b>${esc(g.name)}</b><span class="mu">${done}/${it.length} scheduled</span></div><div class="bar"><i style="width:${it.length?done/it.length*100:0}%"></i></div>${it.map(s=>`<div class="chip" data-edit="${s.id}" style="border-left-color:${colOf(s)}">${s.date} · ${esc(s.title||'(untitled)')} <span class="mu">· ${s.status}</span></div>`).join('')}</div>`}).join('');
+  }else if(view==='week'){const m=mon(anchor);
+    body=`<div class="mu" style="margin-bottom:6px">Week of ${m.toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</div><div class="scroll"><div class="grid g7">${[...Array(7)].map((_,i)=>dayCell(iso(addD(m,i)),true)).join('')}</div></div>`;
+  }else if(view==='month'){
+    const y=anchor.getFullYear(),mo=anchor.getMonth(),first=new Date(y,mo,1),start=mon(first),n=Math.ceil(((first-start)/864e5+new Date(y,mo+1,0).getDate())/7)*7;
+    body=`<div class="mu" style="margin-bottom:6px">${first.toLocaleDateString(undefined,{month:'long',year:'numeric'})}</div><div class="scroll"><div class="grid g7">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="mu">${d}</div>`).join('')}${[...Array(n)].map((_,i)=>{const d=addD(start,i);return d.getMonth()===mo?dayCell(iso(d)):'<div></div>'}).join('')}</div></div>`;
+  }else if(view==='series'){
+    body=`<div class="card"><div class="row"><input id="sn" placeholder="New series name" style="flex:1"><input type="color" id="sc" value="${COL[S.series.length%COL.length]}"><button class="pri" id="sadd">Add series</button></div></div>`+
+     [...S.series,{id:'',name:'No series',color:'#888'}].map(se=>{
+      const it=S.shorts.filter(s=>(s.series||'')===se.id).sort((a,b)=>a.date.localeCompare(b.date));if(!it.length&&!se.id&&true&&S.series.length)return'';
+      const done=it.filter(s=>s.status==='scheduled').length;
+      return`<div class="card"><div class="row"><b style="color:${se.color}">● ${esc(se.name)}</b><span class="mu">${done}/${it.length} scheduled</span>${se.id?`<button class="x" data-sdel="${se.id}" style="margin-left:auto">Delete series</button>`:''}</div>
+       <div class="bar"><i style="width:${it.length?done/it.length*100:0}%"></i></div>
+       ${it.map(s=>`<div class="chip" data-edit="${s.id}" style="border-left-color:${se.color}">${s.date} · ${esc(s.title||'(untitled)')} <span class="mu">· ${s.status}</span></div>`).join('')}</div>`}).join('');
+  }else{
+    const y=yearN;const gaps=[...Array(365)].filter((_,i)=>{const ds=iso(addD(new Date(y,0,1),i));return ds>=today&&ds.startsWith(y)&&!S.shorts.some(s=>s.date===ds)}).length;
+    body=`<div class="mu" style="margin-bottom:8px">${y}: ${S.shorts.filter(s=>s.date.startsWith(y)).length} planned · ${S.shorts.filter(s=>s.date.startsWith(y)&&s.status==='scheduled').length} scheduled · ${gaps} empty days still ahead</div>
+     <div class="row">${S.series.map(s=>`<span class="mu"><span style="color:${s.color}">●</span> ${esc(s.name)}</span>`).join('')}</div>
+     <div class="yr">${[...Array(12)].map((_,m)=>{const f=new Date(y,m,1),pad0=(f.getDay()+6)%7,dn=new Date(y,m+1,0).getDate();
+      return`<div class="card" style="margin:0"><b>${f.toLocaleDateString(undefined,{month:'long'})}</b><div class="mini" style="margin-top:6px">${[...Array(pad0)].map(()=>'<div class="dot n"></div>').join('')}${[...Array(dn)].map((_,i)=>{const ds=iso(new Date(y,m,i+1)),it=S.shorts.filter(s=>s.date===ds);
+       return`<div class="dot ${it.length?'f':''} ${ds===today?'t':''}" ${it.length?`style="background:${colOf(it[0])}"`:''} title="${ds}${it.length?' · '+esc(it[0].title):''}" data-add="${ds}"></div>`}).join('')}</div></div>`}).join('')}</div>`;
+  }
+  $('#main').innerHTML=nav+body;
+  const sa=$('#sadd');if(sa)sa.onclick=()=>{const n=$('#sn').value.trim();if(!n)return;S.series.push({id:uid(),name:n,color:$('#sc').value});save();rShorts()};
+}
+function openShort(id,date){
+  const sh=id?S.shorts.find(s=>s.id===id):{date,title:'',series:S.series[0]?.id||'',long:'',status:'idea',notes:''};
+  $('#dlg').innerHTML=`<b>${id?'Edit':'New'} short</b>
+   <label>Date</label><input type="date" id="f1" value="${sh.date}">
+   <label>Title / hook</label><input id="f2" value="${esc(sh.title)}">
+   <label>Series</label><select id="f3"><option value="">None</option>${S.series.map(s=>`<option value="${s.id}" ${s.id===sh.series?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+   <label>Long-form video</label><select id="f6"><option value="">None</option>${S.long.map(l=>`<option value="${l.id}" ${l.id===sh.long?'selected':''}>${esc(l.title||'Untitled')}</option>`).join('')}</select>
+   <label>Status</label><select id="f4">${ST.map(s=>`<option ${s===sh.status?'selected':''}>${s}</option>`).join('')}</select>
+   <label>Notes / script</label><textarea id="f5" rows="4">${esc(sh.notes)}</textarea>
+   <div class="row" style="margin-top:12px"><button class="pri" id="fs">Save</button><button id="fc">Cancel</button>${id?'<button class="x" id="fd" style="margin-left:auto">Delete</button>':''}</div>`;
+  $('#dlg').showModal();
+  $('#fc').onclick=()=>$('#dlg').close();
+  if(id)$('#fd').onclick=()=>{S.shorts=S.shorts.filter(s=>s.id!==id);save();$('#dlg').close();render()};
+  $('#fs').onclick=()=>{const o={id:id||uid(),date:$('#f1').value,title:$('#f2').value,series:$('#f3').value,status:$('#f4').value,long:$('#f6').value,notes:$('#f5').value};
+    if(id)Object.assign(sh,o);else S.shorts.push(o);save();$('#dlg').close();render()};
+}
+function rLong(){
+  if(!curLong&&S.long[0])curLong=S.long[0].id;
+  const p=S.long.find(l=>l.id===curLong);
+  $('#main').innerHTML=`<div class="split"><div class="card"><button class="pri" id="ladd" style="width:100%;margin-bottom:8px">+ New video page</button>
+   ${S.long.map(l=>`<div class="li ${l.id===curLong?'on':''}" data-lsel="${l.id}">${esc(l.title||'Untitled')}<div class="mu">${l.status}</div></div>`).join('')||'<div class="mu">No pages yet.</div>'}</div>
+   <div class="card">${p?`<div class="row"><input id="lt" value="${esc(p.title)}" placeholder="Video title" style="flex:1;font-size:17px;font-weight:600">
+   <select id="ls">${['researching','outlining','scripting','filming','editing','scheduled'].map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select>
+   <input type="date" id="ld" value="${p.target||''}" title="Target date"></div>
+   <div class="mu">Sources & links</div><textarea id="lsrc" rows="5" placeholder="Links, books, timestamps...">${esc(p.sources)}</textarea>
+   <div class="mu" style="margin-top:8px">Research whiteboard</div><div class="bprev" id="bprev"><canvas id="pc" width="750" height="500"></canvas><div class="mu">Click to open the whiteboard full screen (${(p.board?.items.length||0)} items, ${(p.board?.strokes.length||0)} strokes)</div></div>
+   <div class="mu" style="margin-top:8px">Outline / script</div><textarea id="lo" rows="8">${esc(p.outline)}</textarea>
+   <div class="mu" style="margin-top:8px">Linked shorts (${S.shorts.filter(s=>s.long===p.id).length})</div>${S.shorts.filter(s=>s.long===p.id).sort((a,b)=>a.date.localeCompare(b.date)).map(s=>`<div class="chip" data-edit="${s.id}" style="border-left-color:${colOf(s)}">${s.date} · ${esc(s.title||'(untitled)')} <span class="mu">· ${s.status}</span></div>`).join('')||'<div class="mu">None yet. Link a short from its edit window.</div>'}
+   <div class="row" style="margin-top:8px"><button class="x" id="ldel">Delete page</button></div>`:'<div class="mu">Create a page to start.</div>'}</div></div>`;
+  $('#ladd').onclick=()=>{const l={id:uid(),title:'',status:'researching',sources:'',notes:'',outline:'',target:''};S.long.unshift(l);curLong=l.id;save();rLong()};
+  if(p){[['lt','title'],['ls','status'],['ld','target'],['lsrc','sources'],['lo','outline']].forEach(([i,k])=>$('#'+i).oninput=e=>{p[k]=e.target.value;save()});
+   $('#lt').onchange=$('#ls').onchange=rLong;$('#bprev').onclick=()=>openBoard(p);drawPreview(p);
+   $('#ldel').onclick=()=>{const n=S.shorts.filter(s=>s.long===p.id).length;if(confirm('Delete this page'+(n?' and its '+n+' linked short'+(n>1?'s':''):'')+'? This can\'t be undone.')){S.shorts=S.shorts.filter(s=>s.long!==p.id);S.long=S.long.filter(l=>l!==p);curLong=null;save();rLong()}}}
+}
+function rBackup(){
+  $('#main').innerHTML=`<div class="card"><b>Backup</b><p class="mu">Your data lives in this browser only. Copy this text somewhere safe now and then; paste it back and hit Import to restore (e.g. on another device).</p>
+  <textarea id="bk" rows="10">${esc(JSON.stringify(S))}</textarea><div class="row" style="margin-top:8px"><button class="pri" id="bimp">Import</button></div></div>`;
+  $('#bimp').onclick=()=>{try{const d=JSON.parse($('#bk').value);if(!confirm('Replace everything with this data?'))return;S=Object.assign({verses:[],shorts:[],series:[],long:[]},d);save();alert('Imported.');render()}catch(e){alert('That doesn\'t look like valid backup data.')}};
+}
+/* ---------- whiteboard ---------- */
+let B=null,tool='pen',pc='#111',cur=null,H=[];
+const cv=$('#bc'),sv=(()=>{let t;return()=>{clearTimeout(t);t=setTimeout(save,400)}})();
+function openBoard(p){B=p.board=p.board||{strokes:[],items:[]};B.cam=B.cam||{x:0,y:0,z:1};H=[];$('#wb').style.display='flex';document.body.style.overflow='hidden';$('#wt').textContent=p.title||'Untitled';applyCam();renderItems();setTool('pen')}
+function closeBoard(){$('#wb').style.display='none';document.body.style.overflow='';B=null;save();rLong()}
+function setTool(t){tool=t;document.querySelectorAll('#sw button').forEach(b=>b.classList.toggle('sel',b.dataset.c===pc));document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));$('#bd').className=t==='select'?'':'draw'}
+function drawStrokes(){const c=cv.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);const zz=B.cam.z,dp=window.devicePixelRatio||1;c.setTransform(dp*zz,0,0,dp*zz,-B.cam.x*zz*dp,-B.cam.y*zz*dp);c.lineCap=c.lineJoin='round';B.strokes.forEach(s=>{c.globalCompositeOperation=s.e?'destination-out':'source-over';c.strokeStyle=s.c;c.lineWidth=s.w;c.beginPath();s.p.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));if(s.p.length==1)c.lineTo(s.p[0][0]+.1,s.p[0][1]);c.stroke()});c.globalCompositeOperation='source-over'}
+function renderItems(){const box=$('#bi');box.innerHTML='';B.items.forEach(it=>{const d=document.createElement('div');d.className='it';d.style.cssText=`left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px`;
+ d.innerHTML=`<div class='ih'><span>⠿</span><b>✕</b></div><i class='rz'></i>`+(it.t==='img'?`<img src='${it.src}' draggable='false'>`:`<div class='tx' contenteditable='true'>${esc(it.text)}</div>`);
+ const h=d.firstChild,tx=d.querySelector('.tx');if(tx)tx.oninput=()=>{it.text=tx.innerText;sv()};
+ h.onpointerdown=e=>{if(e.target.tagName==='B'){B.items=B.items.filter(x=>x!==it);save();return renderItems()}const sx=e.clientX,sy=e.clientY,ox=it.x,oy=it.y;e.preventDefault();
+  const mv=m=>{it.x=ox+(m.clientX-sx)/B.cam.z;it.y=oy+(m.clientY-sy)/B.cam.z;d.style.left=it.x+'px';d.style.top=it.y+'px'},up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);save()};addEventListener('pointermove',mv);addEventListener('pointerup',up)};
+ d.querySelector('.rz').onpointerdown=e=>{e.preventDefault();e.stopPropagation();const sx=e.clientX,sy=e.clientY,ow=it.w,oh=it.h;const mv=m=>{it.w=Math.max(90,ow+(m.clientX-sx)/B.cam.z);it.h=Math.max(50,oh+(m.clientY-sy)/B.cam.z);d.style.width=it.w+'px';d.style.height=it.h+'px'},up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);save()};addEventListener('pointermove',mv);addEventListener('pointerup',up)};box.appendChild(d)})}
+const pos=e=>{const r=cv.getBoundingClientRect(),c=B.cam;return[(e.clientX-r.left)/c.z+c.x,(e.clientY-r.top)/c.z+c.y]};
+
+cv.onpointerdown=e=>{if(!B||e.button!==0||(e.pointerType==='touch'&&pts.size>1))return;const[x,y]=pos(e);
+ if(tool==='select')return;
+ if(tool==='text'){const n={id:uid(),t:'txt',x,y,w:220,h:90,text:''};B.items.push(n);H.push(n);save();renderItems();setTool('select');[...document.querySelectorAll('.tx')].pop().focus();return}
+ if(tool==='pen'){cur={c:pc,w:+$('#pw').value,p:[[x,y]]};B.strokes.push(cur);H.push(cur);cv.setPointerCapture(e.pointerId);drawStrokes()}
+ else if(tool==='eraser'){cur={e:1,c:'#000',w:+$('#pw').value*5,p:[[x,y]]};B.strokes.push(cur);H.push(cur);cv.setPointerCapture(e.pointerId);drawStrokes()}};
+cv.onpointermove=e=>{if(!cur)return;const[x,y]=pos(e);cur.p.push([x,y]);drawStrokes()};
+cv.onpointerup=cv.onpointercancel=()=>{if(cur){cur=null;save()}};
+function addImg(f){if(!B||!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);const w=Math.min(360,c.width),s=$('#bs');const n={id:uid(),t:'img',x:B.cam.x+60/B.cam.z,y:B.cam.y+60/B.cam.z,w,h:w*c.height/c.width+20,src:c.toDataURL('image/jpeg',.8)};B.items.push(n);H.push(n);save();renderItems()};im.src=r.result};r.readAsDataURL(f)}
+document.addEventListener('paste',e=>{if(!B)return;const f=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith('image/'));if(f){e.preventDefault();addImg(f.getAsFile())}});
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+$('#sw').innerHTML=['#111','#d64545','#2f6fed','#1f9d55','#e0a100'].map(c=>`<button style='background:${c}' data-c='${c}'></button>`).join('');
+$('#sw').onclick=e=>{const c=e.target.dataset.c;if(c){pc=c;setTool('pen')}};
+$('#bimg').onclick=()=>$('#bf').click();$('#bf').onchange=e=>{addImg(e.target.files[0]);e.target.value=''};
+$('#bund').onclick=()=>{if(!B)return;let o;while((o=H.pop())){if(B.strokes.includes(o)){B.strokes=B.strokes.filter(s=>s!==o);break}if(B.items.includes(o)){B.items=B.items.filter(s=>s!==o);break}}drawStrokes();renderItems();save()};
+$('#bclr').onclick=()=>{if(B&&confirm('Clear all drawing? (Images and text boxes stay.)')){B.strokes=[];drawStrokes();save()}};
+$('#bdone').onclick=closeBoard;
+$('#bhome').onclick=()=>{if(B){B.cam={x:0,y:0,z:1};applyCam();save()}};
+function applyCam(){const s=$('#bs'),dp=window.devicePixelRatio||1,{x,y,z}=B.cam,W=Math.round(s.clientWidth*dp),H2=Math.round(s.clientHeight*dp);if(cv.width!==W||cv.height!==H2){cv.width=W;cv.height=H2}$('#bi').style.transform=`scale(${z}) translate(${-x}px,${-y}px)`;const g=$('#bd').style;let sp=40*z;while(sp<20)sp*=2;while(sp>=80)sp/=2;g.backgroundSize=`${sp}px ${sp}px`;g.backgroundPosition=`${-x*z}px ${-y*z}px`;drawStrokes()}
+addEventListener('resize',()=>{if(B)applyCam()});
+const pts=new Map();let pl=null;const bs=$('#bs');
+const pinch=()=>{const[a,b]=[...pts.values()];return{d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2}};
+function startPan(e){const c=B.cam,sx=e.clientX,sy=e.clientY,ox=c.x,oy=c.y;e.preventDefault();const mv=m=>{c.x=ox-(m.clientX-sx)/c.z;c.y=oy-(m.clientY-sy)/c.z;applyCam()},up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);save()};addEventListener('pointermove',mv);addEventListener('pointerup',up)}
+bs.addEventListener('pointerdown',e=>{if(!B)return;if(e.pointerType==='touch'){pts.set(e.pointerId,[e.clientX,e.clientY]);if(pts.size===2){if(cur){B.strokes=B.strokes.filter(s=>s!==cur);cur=null;drawStrokes()}pl=pinch()}}
+ if(e.button===1||(tool==='select'&&e.target.id==='bd'&&pts.size<2))startPan(e)},true);
+addEventListener('pointermove',e=>{if(!B||e.pointerType!=='touch'||!pts.has(e.pointerId))return;pts.set(e.pointerId,[e.clientX,e.clientY]);if(pts.size!==2||!pl)return;const n=pinch(),r=bs.getBoundingClientRect(),c=B.cam,wx=c.x+(pl.cx-r.left)/c.z,wy=c.y+(pl.cy-r.top)/c.z;c.z=Math.min(5,Math.max(.1,c.z*n.d/pl.d));c.x=wx-(n.cx-r.left)/c.z;c.y=wy-(n.cy-r.top)/c.z;pl=n;applyCam()});
+const endT=e=>{if(pts.delete(e.pointerId)){pl=null;sv()}};addEventListener('pointerup',endT);addEventListener('pointercancel',endT);
+bs.addEventListener('wheel',e=>{if(!B)return;e.preventDefault();const r=bs.getBoundingClientRect(),c=B.cam,mx=e.clientX-r.left,my=e.clientY-r.top,wx=c.x+mx/c.z,wy=c.y+my/c.z;c.z=Math.min(5,Math.max(.1,c.z*Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015))));c.x=wx-mx/c.z;c.y=wy-my/c.z;applyCam();sv()},{passive:false});
+function drawPreview(p){const c=$('#pc').getContext('2d'),b=p.board||{strokes:[],items:[]};c.fillStyle='#fff';c.fillRect(0,0,750,500);c.lineCap='round';const X=[],Y=[],mn=a=>a.reduce((m,v)=>v<m?v:m,Infinity);b.strokes.forEach(s=>s.e||s.p.forEach(q=>{X.push(q[0]);Y.push(q[1])}));b.items.forEach(i=>{X.push(i.x,i.x+i.w);Y.push(i.y,i.y+i.h)});const mnx=X.length?mn(X):0,mny=Y.length?mn(Y):0,bw=X.length?-mn(X.map(v=>-v))-mnx:750,bh=Y.length?-mn(Y.map(v=>-v))-mny:500,k=Math.min(.6,730/Math.max(bw,1),480/Math.max(bh,1));c.translate(10-mnx*k,10-mny*k);
+ b.strokes.forEach(s=>{c.globalCompositeOperation=s.e?'destination-out':'source-over';c.strokeStyle=s.c;c.lineWidth=Math.max(1,s.w*k);c.beginPath();s.p.forEach(([x,y],i)=>i?c.lineTo(x*k,y*k):c.moveTo(x*k,y*k));c.stroke()});
+ c.globalCompositeOperation='source-over';b.items.forEach(it=>{if(it.t==='img'){const i=new Image();i.onload=()=>c.drawImage(i,it.x*k,it.y*k,it.w*k,(it.h-20)*k);i.src=it.src}else{c.fillStyle='#fffbe0';c.fillRect(it.x*k,it.y*k,it.w*k,it.h*k);c.fillStyle='#111';c.font='9px sans-serif';(it.text||'').split('\n').slice(0,6).forEach((l,j)=>c.fillText(l.slice(0,40),it.x*k+3,it.y*k+12+j*11))}})}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab],[data-view],[data-nav],[data-add],[data-edit],[data-vdel],[data-sdel],[data-lsel]');if(!t)return;const d=t.dataset;
+  if(d.tab){tab=d.tab;return render()}
+  if(d.view){view=d.view;return render()}
+  if(d.nav!==undefined){const n=+d.nav;
+    if(view==='year')yearN=n?yearN+n:new Date().getFullYear();
+    else if(!n)anchor=new Date();else if(view==='week')anchor=addD(anchor,7*n);else anchor=new Date(anchor.getFullYear(),anchor.getMonth()+n,1);
+    return rShorts()}
+  if(d.add)return openShort(null,d.add);
+  if(d.edit)return openShort(d.edit);
+  if(d.vdel){S.verses=S.verses.filter(v=>v.id!==d.vdel);save();return rVerses()}
+  if(d.sdel){if(confirm('Delete series? Its shorts stay, unassigned.')){S.shorts.forEach(s=>{if(s.series===d.sdel)s.series=''});S.series=S.series.filter(s=>s.id!==d.sdel);save();rShorts()}return}
+  if(d.lsel){curLong=d.lsel;rLong()}
+});
+render();
+</script></body></html>
